@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f4f4f5" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PyDrop</title>
+<style>
+  :root {
+    --bg: #09090b;
+    --bg-elevated: #141417;
+    --bg-surface: #1e1e22;
+    --bg-glass: rgba(9, 9, 11, 0.86);
+    --border: #27272a;
+    --border-strong: #3f3f46;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --btn-primary-bg: #fafafa;
+    --btn-primary-fg: #09090b;
+    --btn-secondary-bg: #1e1e22;
+    --btn-secondary-fg: #fafafa;
+    --ok: #e4e4e7;
+    --err: #a1a1aa;
+    --warn-bg: #18181b;
+    --warn-fg: #e4e4e7;
+    --shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+    --radius-lg: 20px;
+    --radius-md: 14px;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f4f4f5;
+      --bg-elevated: #ffffff;
+      --bg-surface: #e4e4e7;
+      --bg-glass: rgba(244, 244, 245, 0.88);
+      --border: #d4d4d8;
+      --border-strong: #a1a1aa;
+      --text: #09090b;
+      --text-muted: #52525b;
+      --btn-primary-bg: #09090b;
+      --btn-primary-fg: #fafafa;
+      --btn-secondary-bg: #e4e4e7;
+      --btn-secondary-fg: #09090b;
+      --ok: #18181b;
+      --err: #52525b;
+      --warn-bg: #ffffff;
+      --warn-fg: #18181b;
+      --shadow: 0 6px 20px rgba(9, 9, 11, 0.08);
+    }
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overscroll-behavior-y: contain;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    width: 100%;
+    padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .topbar-inner {
+    max-width: 520px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .brand { display: flex; align-items: center; gap: 11px; }
+
+  .brand-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border-strong);
+  }
+
+  .brand-title { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.025em; line-height: 1.1; }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text);
+    box-shadow: 0 0 0 3px var(--bg-surface);
+  }
+
+  .icon-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-elevated);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .icon-btn:active { transform: scale(0.92); background: var(--bg-surface); }
+  .spin svg { animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .main {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 16px 16px calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .tab-panel { display: none; animation: fadeIn 0.2s ease; }
+  .tab-panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .http-tip {
+    display: none;
+    background: var(--warn-bg);
+    color: var(--warn-fg);
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    padding: 11px 14px;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  .hero-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 24px 18px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    margin-bottom: 18px;
+  }
+
+  .hero-badge {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
+    border-radius: 18px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+  }
+
+  .hero-card h2 { margin: 0 0 6px; font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; }
+  .hero-card p { margin: 0 0 18px; font-size: 0.88rem; color: var(--text-muted); line-height: 1.45; }
+
+  .action-stack { display: grid; gap: 10px; }
+
+  .primary-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 54px;
+    border: 1px solid var(--btn-primary-bg);
+    border-radius: var(--radius-md);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.14s ease, opacity 0.14s ease;
+  }
+  .primary-btn:active { transform: scale(0.97); opacity: 0.88; }
+
+  .secondary-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-fg);
+    font-size: 0.93rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.14s ease;
+  }
+  .secondary-btn:active { transform: scale(0.97); }
+
+  input[type="file"] { display: none; }
+
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 18px 4px 10px;
+  }
+
+  .section-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+  }
+
+  .clear-link {
+    background: none;
+    border: none;
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    padding: 4px 6px;
+    cursor: pointer;
+  }
+
+  .card-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .item-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .ftype-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+
+  .file-meta { flex: 1; min-width: 0; }
+  .file-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.32;
+    color: var(--text);
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .file-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dl-btn {
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 11px;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    border: 1px solid var(--btn-primary-bg);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    transition: transform 0.14s ease, opacity 0.14s ease;
+  }
+  .dl-btn:active { transform: scale(0.94); opacity: 0.88; }
+
+  .prog-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+  .cancel-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-surface);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    width: 100%;
+    height: 7px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 11px;
+  }
+
+  .bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 99px;
+    background: var(--text);
+    transition: width 0.12s linear;
+  }
+  .bar-fill.ok { background: var(--text); }
+  .bar-fill.err { background: var(--text-muted); }
+
+  .pill-ok { color: var(--text); font-weight: 700; }
+  .pill-err { color: var(--text-muted); font-weight: 700; text-decoration: line-through; }
+
+  .empty-state {
+    text-align: center;
+    padding: 36px 20px;
+    background: var(--bg-elevated);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+  }
+
+  .nav-inner { max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .nav-btn {
+    position: relative;
+    min-height: 50px;
+    border: 1px solid transparent;
+    border-radius: 13px;
+    background: transparent;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease, border-color 0.18s ease;
+  }
+  .nav-btn:active { transform: scale(0.96); }
+  .nav-btn.active {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    border-color: var(--btn-primary-bg);
+  }
+
+  .badge {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 99px;
+    background: var(--bg-surface);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    font-size: 0.72rem;
+    font-weight: 800;
+    display: none;
+    place-items: center;
+  }
+  .nav-btn.active .badge {
+    background: var(--btn-primary-fg);
+    color: var(--btn-primary-bg);
+    border-color: var(--btn-primary-fg);
+  }
+  .badge.show { display: inline-grid; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(82px + env(safe-area-inset-bottom));
+    transform: translate(-50%, 16px);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    border: 1px solid var(--border-strong);
+    padding: 10px 18px;
+    border-radius: 99px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 50;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v13"/><path d="m7 7 5-5 5 5"/><path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>
+      </div>
+      <div>
+        <div class="brand-title">PyDrop</div>
+        <div class="status-pill"><span class="dot"></span><span id="connMode">Local Wi-Fi Active</span></div>
+      </div>
+    </div>
+    <button class="icon-btn" id="refreshBtn" aria-label="Refresh files" onclick="manualRefresh()">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="main">
+  <section id="tab-send" class="tab-panel active">
+    <div class="hero-card" id="dropzone">
+      <div class="hero-badge">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <h2>Send to Host PC</h2>
+      <p>Transfer multi-GB videos, photos, and documents directly over Wi-Fi at full speed.</p>
+
+      <div class="action-stack">
+        <label class="primary-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          Choose Any Files
+          <input type="file" id="fileInput" multiple>
+        </label>
+        <label class="secondary-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Photos &amp; Videos
+          <input type="file" id="mediaInput" accept="image/*,video/*" multiple>
+        </label>
+      </div>
+    </div>
+
+    <div id="queueSection" style="display:none;">
+      <div class="section-head">
+        <span class="section-title">Transfers</span>
+        <button class="clear-link" onclick="clearFinished()">Clear Finished</button>
+      </div>
+      <div class="card-list" id="uploadQueue"></div>
+    </div>
+  </section>
+
+  <section id="tab-receive" class="tab-panel">
+    <div class="http-tip" id="httpTip">
+      Using HTTP mode: If Android Chrome says "File can't be downloaded securely", tap <strong>Keep</strong> in the download prompt, or enable <strong>HTTPS Mode</strong> on the desktop app.
+    </div>
+    <div class="section-head" style="margin-top:4px;">
+      <span class="section-title">Shared from PC</span>
+      <span class="section-title" id="fileCountLabel">0 Files</span>
+    </div>
+    <div class="card-list" id="fileList">
+      <div class="empty-state">Checking for shared files...</div>
+    </div>
+  </section>
+</main>
+
+<nav class="bottom-nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" id="nav-send" onclick="switchTab('send')">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+      Send
+    </button>
+    <button class="nav-btn" id="nav-receive" onclick="switchTab('receive')">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+      From PC
+      <span class="badge" id="pcBadge">0</span>
+    </button>
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TOKEN = "__SESSION_TOKEN__";
+const fileInput = document.getElementById("fileInput");
+const mediaInput = document.getElementById("mediaInput");
+const uploadQueue = document.getElementById("uploadQueue");
+const queueSection = document.getElementById("queueSection");
+const pcBadge = document.getElementById("pcBadge");
+
+if (window.location.protocol === "https:") {
+  document.getElementById("connMode").textContent = "Encrypted Local HTTPS";
+} else {
+  document.getElementById("httpTip").style.display = "block";
+}
+
+fileInput.addEventListener("change", () => { handleFiles(fileInput.files); fileInput.value = ""; });
+mediaInput.addEventListener("change", () => { handleFiles(mediaInput.files); mediaInput.value = ""; });
+
+function switchTab(tab) {
+  document.querySelectorAll(".tab-panel").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(el => el.classList.remove("active"));
+  document.getElementById(`tab-${tab}`).classList.add("active");
+  document.getElementById(`nav-${tab}`).classList.add("active");
+  if (tab === "receive") loadFiles();
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+function formatBytes(bytes) {
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let val = bytes, i = 0;
+  while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
+  return `${i === 0 ? val : val.toFixed(1)} ${units[i]}`;
+}
+
+function getFileVisual(name) {
+  const ext = (name.split(".").pop() || "").toLowerCase();
+  if (["jpg","jpeg","png","gif","webp","heic","svg"].includes(ext))
+    return '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>';
+  if (["mp4","mov","mkv","avi","webm"].includes(ext))
+    return '<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>';
+  if (["mp3","wav","m4a","flac","ogg"].includes(ext))
+    return '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>';
+  if (["zip","rar","7z","tar","gz"].includes(ext))
+    return '<path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/>';
+  return '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>';
+}
+
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function handleFiles(files) {
+  if (!files || !files.length) return;
+  queueSection.style.display = "block";
+  for (const file of files) uploadFile(file);
+}
+
+function uploadFile(file) {
+  const iconSvg = getFileVisual(file.name);
+  const card = document.createElement("div");
+  card.className = "item-card";
+  card.dataset.state = "active";
+
+  card.innerHTML = `
+    <div class="prog-top">
+      <div class="ftype-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
+      </div>
+      <div class="file-meta">
+        <div class="file-name">${escapeHtml(file.name)}</div>
+        <div class="file-sub" data-role="sub">${formatBytes(file.size)} • Waiting...</div>
+      </div>
+      <button class="cancel-btn" aria-label="Cancel upload">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="bar-track"><div class="bar-fill"></div></div>
+  `;
+
+  uploadQueue.prepend(card);
+  const subEl = card.querySelector('[data-role="sub"]');
+  const barEl = card.querySelector(".bar-fill");
+  const cancelBtn = card.querySelector(".cancel-btn");
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", `/api/upload?token=${encodeURIComponent(TOKEN)}`, true);
+  xhr.setRequestHeader("X-Filename", encodeURIComponent(file.name));
+
+  cancelBtn.onclick = () => {
+    if (card.dataset.state === "active") {
+      xhr.abort();
+      card.dataset.state = "done";
+      barEl.classList.add("err");
+      subEl.innerHTML = `<span class="pill-err">Cancelled</span>`;
+      cancelBtn.remove();
+    }
+  };
+
+  const start = Date.now();
+  xhr.upload.onprogress = e => {
+    if (e.lengthComputable) {
+      const pct = Math.round((e.loaded / e.total) * 100);
+      const elapsed = Math.max((Date.now() - start) / 1000, 0.1);
+      const speed = (e.loaded / (1024 * 1024) / elapsed).toFixed(1);
+      barEl.style.width = pct + "%";
+      subEl.textContent = `${pct}% • ${formatBytes(e.loaded)} / ${formatBytes(e.total)} • ${speed} MB/s`;
+    }
+  };
+
+  xhr.onload = () => {
+    card.dataset.state = "done";
+    cancelBtn.remove();
+    if (xhr.status === 200) {
+      barEl.style.width = "100%";
+      barEl.classList.add("ok");
+      subEl.innerHTML = `<span class="pill-ok">Sent to PC</span> • ${formatBytes(file.size)}`;
+      showToast(`Sent ${file.name}`);
+    } else {
+      barEl.classList.add("err");
+      subEl.innerHTML = `<span class="pill-err">Failed (${xhr.status})</span>`;
+    }
+  };
+
+  xhr.onerror = () => {
+    card.dataset.state = "done";
+    cancelBtn.remove();
+    barEl.classList.add("err");
+    subEl.innerHTML = `<span class="pill-err">Connection lost</span>`;
+  };
+
+  xhr.send(file);
+}
+
+function clearFinished() {
+  uploadQueue.querySelectorAll('[data-state="done"]').forEach(el => el.remove());
+  if (!uploadQueue.children.length) queueSection.style.display = "none";
+}
+
+async function loadFiles() {
+  try {
+    const res = await fetch(`/api/files?token=${encodeURIComponent(TOKEN)}`);
+    if (!res.ok) return;
+    const files = await res.json();
+
+    pcBadge.textContent = files.length;
+    pcBadge.classList.toggle("show", files.length > 0);
+    document.getElementById("fileCountLabel").textContent = `${files.length} ${files.length === 1 ? "File" : "Files"}`;
+
+    const container = document.getElementById("fileList");
+    if (!files.length) {
+      container.innerHTML = '<div class="empty-state">No files shared by the host PC yet.<br><br>Add files on your PC to download them here.</div>';
+      return;
+    }
+
+    container.innerHTML = files.map(f => {
+      const iconSvg = getFileVisual(f.name);
+      return `
+        <div class="item-card file-item">
+          <div class="ftype-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
+          </div>
+          <div class="file-meta">
+            <div class="file-name">${escapeHtml(f.name)}</div>
+            <div class="file-sub">${escapeHtml(f.size_human)}</div>
+          </div>
+          <a class="dl-btn" download="${escapeHtml(f.name)}" href="/api/download/${encodeURIComponent(f.id)}?token=${encodeURIComponent(TOKEN)}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Save
+          </a>
+        </div>
+      `;
+    }).join("");
+  } catch (e) {}
+}
+
+async function manualRefresh() {
+  const btn = document.getElementById("refreshBtn");
+  btn.classList.add("spin");
+  await loadFiles();
+  setTimeout(() => btn.classList.remove("spin"), 350);
+  showToast("File list updated");
+}
+
+loadFiles();
+setInterval(loadFiles, 5000);
+</script>
+</body>
+</html>
